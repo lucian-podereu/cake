@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Cake.Core
 {
@@ -25,6 +26,13 @@ namespace Cake.Core
         /// <param name="task">The task to execute.</param>
         /// <param name="context">The context.</param>
         void Execute(CakeTask task, ICakeContext context);
+
+        /// <summary>
+        /// Executes the specified task asynchronously.
+        /// </summary>
+        /// <param name="task">The task to execute.</param>
+        /// <param name="context">The context.</param>
+        Task ExecuteAsync(CakeTask task, ICakeContext context);
 
         /// <summary>
         /// Skips the specified task.

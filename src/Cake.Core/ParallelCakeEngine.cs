@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Cake.Core.Diagnostics;
 using Cake.Core.Graph;
 
 namespace Cake.Core
 {
     /// <summary>
-    /// The Cake execution engine.
+    /// The Cake execution engine, with support for parallel execution of tasks.
     /// </summary>
-    public sealed class CakeEngine : AbstractCakeEngine
+    public sealed class ParallelCakeEngine : AbstractCakeEngine
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CakeEngine"/> class.
+        /// Constructs a new <see cref="ParallelCakeEngine"/> object.
         /// </summary>
-        /// <param name="log">The log.</param>
-        public CakeEngine(ICakeLog log) : base(log)
+        /// <param name="log">The <see cref="ICakeLog"/> logger.</param>
+        public ParallelCakeEngine(ICakeLog log) : base(log)
         {
         }
 
@@ -41,9 +43,6 @@ namespace Cake.Core
 
             ThrowIfTargetNotFound(target, graph);
 
-            // This isn't pretty, but we need to keep track of exceptions thrown
-            // while running a setup action, or a task. We do this since we don't
-            // want to throw teardown exceptions if an exception was thrown previously.
             var exceptionWasThrown = false;
 
             try
@@ -53,12 +52,20 @@ namespace Cake.Core
                 var stopWatch = new Stopwatch();
                 var report = new CakeReport();
 
-                foreach (var taskNode in graph.Traverse(target))
+                foreach (IEnumerable<string> parallelNodes in graph.TraverseAndGroup(target))
                 {
-                    bool isTarget;
-                    var task = GetTask(target, taskNode, out isTarget);
+                    var runningTasks = new List<Task>();
 
-                    Runner.ExecuteTask(context, strategy, stopWatch, task, isTarget, report);
+                    foreach (var taskNode in parallelNodes)
+                    {
+                        bool isTarget;
+                        var task = GetTask(target, taskNode, out isTarget);
+
+                        var newTask = Runner.ExecuteTaskAsync(context, strategy, stopWatch, task, isTarget, report);
+                        runningTasks.Add(newTask);
+                    }
+
+                    Task.WaitAll(runningTasks.ToArray());
                 }
 
                 return report;

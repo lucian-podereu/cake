@@ -296,5 +296,75 @@ namespace Cake.Core.Tests.Unit.Graph
                 Assert.Equal("Graph contains circular references.", result.Message);
             }
         }
+
+        public sealed class TheTraverseAndGroupMethod
+        {
+            [Fact]
+            public void Should_Return_Empty_If_No_Nodes()
+            {
+                // Given
+                var graph = new CakeGraph();
+             
+                // When
+                var result = graph.Traverse("D").ToArray();
+
+                // Then
+                Assert.Equal(0, result.Length);
+            }
+
+            [Fact]
+            public void Should_Return_Empty_If_Not_Found()
+            {
+                var graph = new CakeGraph();
+                graph.Connect("A", "B");
+                graph.Connect("B", "C");
+
+                var result = graph.Traverse("E").ToArray();
+
+                Assert.Equal(0, result.Length);
+            }
+
+            [Fact]
+            public void Should_Not_Group_NonParallel_Nodes()
+            {
+                var graph = new CakeGraph();
+                graph.Connect("A", "B");                
+                graph.Connect("B", "C");
+
+                var result = graph.Traverse("C").ToArray();
+
+                Assert.Equal(3, result.Length);
+                Assert.Equal("A", result[0]);
+                Assert.Equal("B", result[1]);
+                Assert.Equal("C", result[2]);
+            }
+
+            [Fact]
+            public void Should_Group_Parallel_Nodes()
+            {
+                var graph = new CakeGraph();
+                graph.Connect("1", "2");
+                graph.Connect("1", "3");
+                graph.Connect("1", "4");
+                graph.Connect("2", "5");
+                graph.Connect("3", "5");
+                graph.Connect("4", "5");
+
+                var result = graph.TraverseAndGroup("5").ToArray();
+
+                Assert.Equal(3, result.Length);
+
+                Assert.Equal(1, result[0].Count());
+                Assert.Equal("1", result[0].First());
+
+                Assert.Equal(3, result[1].Count());
+                Assert.Equal("2", result[1].First());
+                Assert.Equal("3", result[1].Skip(1).First());
+                Assert.Equal("4", result[1].Skip(2).First());
+
+                Assert.Equal(1, result[2].Count());
+                Assert.Equal("5", result[2].First());
+            }
+        }
     }
 }

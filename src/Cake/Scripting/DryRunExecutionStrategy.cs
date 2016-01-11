@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Cake.Core;
 using Cake.Core.Diagnostics;
 
@@ -34,6 +35,17 @@ namespace Cake.Scripting
                 _log.Information("{0}. {1}", _counter, task.Name);
                 _counter++;
             }
+        }
+
+        public Task ExecuteAsync(CakeTask task, ICakeContext context)
+        {
+            if (task != null)
+            {
+                _log.Information("{0}. {1}", _counter, task.Name);
+                _counter++;
+            }
+
+            return Task.FromResult(0);
         }
 
         public void Skip(CakeTask task)

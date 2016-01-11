@@ -38,5 +38,10 @@ namespace Cake.Core.Tests.Fixtures
         {
             return new CakeEngine(Log);
         }
+
+        public ParallelCakeEngine CreateParallelEngine()
+        {
+            return new ParallelCakeEngine(Log);
+        }
     }
 }

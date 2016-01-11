@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Cake.Core.Diagnostics;
 
 namespace Cake.Core
@@ -71,6 +72,27 @@ namespace Cake.Core
                 _log.Verbose("Executing task: {0}", task.Name);
 
                 task.Execute(context);
+
+                _log.Verbose("Finished executing task: {0}", task.Name);
+            }
+        }
+
+        /// <summary>
+        /// Executes the specified task asynchronously.
+        /// </summary>
+        /// <param name="task">The task to execute.</param>
+        /// <param name="context">The context.</param>
+        public async Task ExecuteAsync(CakeTask task, ICakeContext context)
+        {
+            if (task != null)
+            {
+                _log.Information(string.Empty);
+                _log.Information("========================================");
+                _log.Information(task.Name);
+                _log.Information("========================================");
+                _log.Verbose("Executing task: {0}", task.Name);
+
+                await Task.Run(() => task.Execute(context));
 
                 _log.Verbose("Finished executing task: {0}", task.Name);
             }

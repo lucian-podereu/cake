@@ -64,6 +64,7 @@
     <Compile Include="CakeTask.cs" />
     <Compile Include="CakeTaskBuilder.cs" />
     <Compile Include="CakeTaskBuilderExtensions.cs" />
+    <Compile Include="AbstractCakeEngine.cs" />
     <Compile Include="DefaultExecutionStrategy.cs" />
     <Compile Include="Diagnostics\ICakeLog.cs" />
     <Compile Include="Diagnostics\LogAction.cs" />
@@ -162,6 +163,7 @@
     <Compile Include="IO\WindowsRegistryKey.cs" />
     <Compile Include="ITaskSetupContext.cs" />
     <Compile Include="ITaskTeardownContext.cs" />
+    <Compile Include="ParallelCakeEngine.cs" />
     <Compile Include="Properties\Namespaces.cs">
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </Compile>
@@ -204,6 +206,7 @@
     <Compile Include="Scripting\ScriptHost.cs" />
     <Compile Include="Scripting\ScriptProcessor.cs" />
     <Compile Include="Scripting\ScriptRunner.cs" />
+    <Compile Include="TaskRunner.cs" />
     <Compile Include="TaskSetupContext.cs" />
     <Compile Include="TaskTeardownContext.cs" />
     <Compile Include="Text\ITextTransformationTemplate.cs" />

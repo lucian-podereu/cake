@@ -1,11 +1,132 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cake.Core.Tests.Fixtures;
 using Xunit;
 
 namespace Cake.Core.Tests.Unit
 {
+    public sealed class ParallelCakeEngineTests
+    {
+        public sealed class TheConstructor
+        {
+            [Fact]
+            public void Should_Throw_If_Log_Is_Null()
+            {
+                // Given
+                var fixture = new CakeEngineFixture { Log = null };
+
+                // When
+                var result = Record.Exception(() => fixture.CreateParallelEngine());
+
+                // Then
+                Assert.IsArgumentNullException(result, "log");
+            }
+        }
+
+        public sealed class TheRunTargetMethod
+        {
+            public sealed class WithTarget
+            {
+                [Fact]
+                public void Should_Throw_If_Target_Is_Null()
+                {
+                    // Given
+                    var fixture = new CakeEngineFixture();
+                    var engine = fixture.CreateParallelEngine();
+
+                    // When
+                    var result = Record.Exception(() =>
+                        engine.RunTarget(fixture.Context, fixture.ExecutionStrategy, null));
+
+                    // Then
+                    Assert.IsArgumentNullException(result, "target");
+                }
+            }
+
+            [Fact]
+            public void Should_Execute_Sequential_Tasks_In_Order()
+            {
+                // Given
+                var result = new List<string>();
+                var fixture = new CakeEngineFixture();
+                var engine = fixture.CreateParallelEngine();
+                engine.RegisterTask("A").Does(() => result.Add("A"));
+                engine.RegisterTask("B").IsDependentOn("A").Does(() => result.Add("B"));
+                engine.RegisterTask("C").IsDependentOn("B").Does(() => result.Add("C"));
+
+                // When
+                engine.RunTarget(fixture.Context, fixture.ExecutionStrategy, "C");
+
+                // Then
+                Assert.Equal(3, result.Count);
+                Assert.Equal("A", result[0]);
+                Assert.Equal("B", result[1]);
+                Assert.Equal("C", result[2]);
+            }
+
+            [Fact]
+            public void Should_Execute_Parallel_Tasks_In_Parallel()
+            {
+                // Given
+                var result = new List<string>();
+                var fixture = new CakeEngineFixture();
+                var engine = fixture.CreateParallelEngine();
+                engine.RegisterTask("A").Does(() => result.Add("A"));
+
+                var semaphore = new SemaphoreSlim(1);
+                engine.RegisterTask("B").IsDependentOn("A").Does(() => { result.Add("B"); semaphore.Wait(); });
+                engine.RegisterTask("C").IsDependentOn("A").Does(() => { result.Add("C"); semaphore.Release(); });
+
+                engine.RegisterTask("D").IsDependentOn("B").IsDependentOn("C").Does(() => result.Add("D"));
+
+                // When
+                engine.RunTarget(fixture.Context, fixture.ExecutionStrategy, "D");
+
+                // Then
+                Assert.Equal(4, result.Count);
+                Assert.Equal("A", result[0]);
+
+                Assert.True(result[1] == "B" || result[2] == "B");
+                Assert.True(result[1] == "C" || result[2] == "C");
+
+                Assert.Equal("D", result[3]);
+            }
+
+            [Fact]
+            public void Should_Execute_Parallel_Tasks_In_Parallel2()
+            {
+                // Given
+                var result = new List<string>();
+                var fixture = new CakeEngineFixture();
+                var engine = fixture.CreateParallelEngine();
+                engine.RegisterTask("1").Does(() => result.Add("1"));
+
+                var semaphore = new SemaphoreSlim(1);
+                engine.RegisterTask("2").IsDependentOn("1").Does(() => { result.Add("2"); semaphore.Wait(); });
+                engine.RegisterTask("3").IsDependentOn("1").Does(() => { result.Add("3"); semaphore.Wait(); });
+                engine.RegisterTask("4").IsDependentOn("1").Does(() => { result.Add("4"); semaphore.Release(2); });
+
+                engine.RegisterTask("5").IsDependentOn("2").IsDependentOn("3").IsDependentOn("4").Does(() => result.Add("5"));
+
+                // When
+                engine.RunTarget(fixture.Context, fixture.ExecutionStrategy, "5");
+
+                // Then
+                Assert.Equal(5, result.Count);
+                Assert.Equal("1", result[0]);
+
+                Assert.True(result[1] == "2" || result[2] == "2" || result[3] == "2");
+                Assert.True(result[1] == "3" || result[2] == "3" || result[3] == "3");
+                Assert.True(result[1] == "4" || result[2] == "4" || result[3] == "4");
+
+                Assert.Equal("5", result[4]);
+            }
+        }
+    }
+
+
     public sealed class CakeEngineTests
     {
         public sealed class TheConstructor
